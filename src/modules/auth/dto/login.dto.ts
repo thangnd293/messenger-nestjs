@@ -1,11 +1,11 @@
 import * as Joi from 'joi';
 
 export class LoginDto {
-  username: string;
+  email: string;
   password: string;
 }
 
 export const LoginDtoSchema = Joi.object({
-  username: Joi.string().required(),
+  email: Joi.string().required(),
   password: Joi.string().required(),
 });

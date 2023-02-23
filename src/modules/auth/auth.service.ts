@@ -11,9 +11,9 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(username: string, password: string): Promise<any> {
+  async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findOne({
-      username,
+      email,
       password: password,
     });
 
@@ -32,7 +32,7 @@ export class AuthService {
 
   async signUp(user: Partial<User>) {
     const isUserExist = await this.usersService.findOne({
-      username: user.username,
+      email: user.email,
     });
 
     if (isUserExist) throw new BadRequestException('User already exists');
