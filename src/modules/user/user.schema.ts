@@ -39,17 +39,7 @@ export class User extends Document {
   @Prop({
     type: [{ type: Types.ObjectId, ref: 'User' }],
   })
-  friends: User[];
-
-  @Prop({
-    type: [{ type: Types.ObjectId, ref: 'User' }],
-  })
-  friendRequests: User[];
-
-  @Prop({
-    type: [{ type: Types.ObjectId, ref: 'User' }],
-  })
-  friendRequestsSent: User[];
+  friends: string[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
