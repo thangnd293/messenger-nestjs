@@ -1,3 +1,4 @@
+import { ConversationModule } from './../conversation/conversation.module';
 import { MessageController } from './message.controller';
 import { MessageSchema } from './schema/message.schema';
 import { Message } from 'modules/message/schema/message.schema';
@@ -13,6 +14,7 @@ import { MessageService } from './message.service';
         schema: MessageSchema,
       },
     ]),
+    ConversationModule,
   ],
   controllers: [MessageController],
   providers: [MessageService],

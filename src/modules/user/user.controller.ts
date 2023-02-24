@@ -15,10 +15,18 @@ export class UserController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('friends')
+  @Get('connections')
   getFriends(@Request() req) {
     const requestUser = req.user;
 
-    return this.userService.getFriends(requestUser._id);
+    return this.userService.getConnections(requestUser._id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('conversations')
+  getConversations(@Request() req) {
+    const requestUser = req.user;
+
+    return this.userService.getConversations(requestUser._id);
   }
 }

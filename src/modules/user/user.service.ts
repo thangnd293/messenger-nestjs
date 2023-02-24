@@ -75,17 +75,72 @@ export class UserService {
       .lean();
   });
 
-  //Todo: Change this logic
-  getFriends = tryCatchWrapper(async (id: Types.ObjectId) => {
-    return await this.userModel
-      .findById(id, {
-        friends: 1,
-      })
-      .populate('friends', {
-        password: 0,
-        friendRequests: 0,
-        friendRequestsSent: 0,
-      })
-      .lean();
+  getConnections = tryCatchWrapper(async (userId: Types.ObjectId) => {
+    return this.conversationService.getConnections(userId);
+  });
+
+  getConversations = tryCatchWrapper(async (userId: Types.ObjectId) => {
+    return this.conversationService.getAll([
+      { $match: { members: userId, lastMessage: { $exists: true } } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'members',
+          foreignField: '_id',
+          as: 'members',
+        },
+      },
+      {
+        $addFields: {
+          user: {
+            $first: {
+              $filter: {
+                input: '$members',
+                as: 'member',
+                cond: { $ne: ['$$member._id', userId] },
+              },
+            },
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: 'messages',
+          localField: 'lastMessage',
+          foreignField: '_id',
+          as: 'lastMessage',
+        },
+      },
+      {
+        $addFields: {
+          lastMessage: { $arrayElemAt: ['$lastMessage', 0] },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          type: 1,
+          lastMessage: {
+            _id: 1,
+            content: 1,
+            createdAt: 1,
+            sender: 1,
+            status: 1,
+          },
+          name: 1,
+          avatar: 1,
+          isOnline: 1,
+          lastActive: 1,
+          user: {
+            _id: 1,
+            lastName: 1,
+            firstName: 1,
+            avatar: 1,
+            isOnline: 1,
+            lastActive: 1,
+          },
+        },
+      },
+    ]);
   });
 }

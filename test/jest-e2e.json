@@ -8,6 +8,7 @@
   },
   "moduleNameMapper": {
     "^@/(.*)$": "<rootDir>/../src/$1",
-    "^@Config/(.*)$": "<rootDir>/../src/configs/$1"
+    "^@Config/(.*)$": "<rootDir>/../src/configs/$1",
+    "^@Type/(.*)$": "<rootDir>/../src/types/$1"
   }
 }

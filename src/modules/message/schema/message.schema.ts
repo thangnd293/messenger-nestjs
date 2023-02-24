@@ -1,25 +1,25 @@
+import { MessageStatusEnum, MessageTypeEnum } from 'types/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { User } from 'modules/user/user.schema';
-import { Types, Document } from 'mongoose';
+import mongoose, { Document } from 'mongoose';
 import { ActiveTime, ActiveTimeSchema } from './timeActive.schema';
 
 @Schema({ timestamps: true })
 export class Message extends Document {
   @Prop({
-    enum: ['text', 'image', 'audio'],
+    enum: MessageTypeEnum,
   })
   type: string;
 
   @Prop()
   content: string;
 
-  @Prop({
-    type: { type: Types.ObjectId, ref: 'User' },
-  })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User' })
   sender: User;
 
   @Prop({
-    enum: ['received', 'seen'],
+    enum: MessageStatusEnum,
+    default: 'sent',
   })
   status: string;
 
@@ -30,6 +30,9 @@ export class Message extends Document {
     type: [ActiveTimeSchema],
   })
   seenBy?: ActiveTime[];
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'conversation' })
+  conversation: string;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

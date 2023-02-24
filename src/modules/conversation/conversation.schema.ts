@@ -1,8 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Message } from 'modules/message/schema/message.schema';
 import { User } from 'modules/user/user.schema';
-import { Types, Document } from 'mongoose';
-import { ConversationType, ConversationEnum } from 'types/common';
+import mongoose, { Document } from 'mongoose';
+import { ConversationEnum, ConversationType } from 'types/common';
 
 @Schema({
   timestamps: true,
@@ -14,13 +14,11 @@ export class Conversation extends Document {
   type: ConversationType;
 
   @Prop({
-    type: [{ type: Types.ObjectId, ref: 'User' }],
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   })
   members: User[];
 
-  @Prop({
-    type: { type: Types.ObjectId, ref: 'Message' },
-  })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Message' })
   lastMessage: Message;
 
   @Prop()
