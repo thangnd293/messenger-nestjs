@@ -8,25 +8,41 @@ export class UserController {
 
   @UseGuards(JwtAuthGuard)
   @Get('search')
-  searchByName(@Query('name') name: string, @Request() req) {
+  async searchByName(@Query('name') name: string, @Request() req) {
     const requestUser = req.user;
-
-    return this.userService.searchByName(requestUser._id, name);
+    const usersFound = await this.userService.searchByName(
+      requestUser._id,
+      name,
+    );
+    return {
+      data: usersFound,
+      totalCount: usersFound.length,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('connections')
-  getFriends(@Request() req) {
+  async getConnections(@Request() req) {
     const requestUser = req.user;
+    const connections = await this.userService.getConnections(requestUser._id);
 
-    return this.userService.getConnections(requestUser._id);
+    return {
+      data: connections,
+      totalCount: connections.length,
+    };
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('conversations')
-  getConversations(@Request() req) {
+  async getConversations(@Request() req) {
     const requestUser = req.user;
+    const conversations = await this.userService.getConversations(
+      requestUser._id,
+    );
 
-    return this.userService.getConversations(requestUser._id);
+    return {
+      data: conversations,
+      totalCount: conversations.length,
+    };
   }
 }

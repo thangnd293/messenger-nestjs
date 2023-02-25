@@ -1,4 +1,4 @@
-import { MessageStatus } from 'types/common';
+import { MessageStatus, MessageTypeEnum } from 'types/common';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConversationService } from 'modules/conversation/conversation.service';
@@ -61,26 +61,47 @@ export class MessageService {
 
   seen = tryCatchWrapper(
     async (userId: Types.ObjectId, messageId: Types.ObjectId) => {
-      return await this.messageModel.findByIdAndUpdate(
-        messageId,
+      const messageUpdated = await this.messageModel.findOneAndUpdate(
         {
-          $addToSet: {
-            // thêm giá trị mới vào mảng seenBy
-            seenBy: {
-              user: userId,
-              activeTime: new Date(),
-            },
-          },
+          _id: messageId,
+          'seenBy.user': userId,
+        },
+        {
           $set: {
-            // cập nhật lại giá trị activeTime nếu userId đã có trong mảng seenBy
-            'seenBy.$[elem].activeTime': new Date(),
+            'seenBy.$.activeTime': new Date(),
           },
         },
         {
-          arrayFilters: [{ 'elem.user': userId }], // áp dụng filter để chỉ cập nhật giá trị cho phần tử có user trùng với userId
-          new: true, // trả về giá trị mới của tài liệu sau khi đã cập nhật
+          new: true,
         },
       );
+
+      if (!messageUpdated) {
+        return await this.messageModel.updateOne(
+          { _id: messageId },
+          { $push: { seenBy: { user: userId, activeTime: new Date() } } },
+        );
+      }
+
+      return messageUpdated;
+    },
+  );
+
+  searchByText = tryCatchWrapper(
+    async (conversationId: Types.ObjectId, text: string) => {
+      return await this.messageModel
+        .find({
+          $and: [
+            {
+              conversation: conversationId,
+            },
+            {
+              type: MessageTypeEnum.text,
+            },
+            { content: { $regex: text, $options: 'i' } },
+          ],
+        })
+        .lean();
     },
   );
 }

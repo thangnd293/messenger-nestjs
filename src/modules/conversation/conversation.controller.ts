@@ -10,12 +10,15 @@ export class ConversationController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  getConversation(@Request() req, @Param('id') id: string) {
+  async getConversation(@Request() req, @Param('id') id: string) {
     const requestUser = req.user;
-
-    return this.conversationService.getConversationById(
-      requestUser._id,
-      new Types.ObjectId(id),
-    );
+    const conversationFound =
+      await this.conversationService.getConversationById(
+        requestUser._id,
+        new Types.ObjectId(id),
+      );
+    return {
+      data: conversationFound,
+    };
   }
 }

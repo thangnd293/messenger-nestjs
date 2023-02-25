@@ -1,10 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   FilterQuery,
   Model,
   PipelineStage,
-  ProjectionType,
   Types,
   UpdateQuery,
   UpdateWithAggregationPipeline,

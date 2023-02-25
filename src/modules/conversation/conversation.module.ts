@@ -10,6 +10,7 @@ import { ConversationService } from './conversation.service';
       { name: Conversation.name, schema: ConversationSchema },
     ]),
   ],
+
   controllers: [ConversationController],
   providers: [ConversationService],
   exports: [ConversationService],
