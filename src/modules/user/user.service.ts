@@ -1,3 +1,4 @@
+import { Conversation } from './../conversation/conversation.schema';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConversationService } from 'modules/conversation/conversation.service';
@@ -18,6 +19,17 @@ export class UserService {
       return user;
     },
   );
+
+  findById = tryCatchWrapper(async (id: Types.ObjectId) => {
+    const user = await this.userModel
+      .findById(id, {
+        password: 0,
+        friends: 0,
+      })
+      .lean();
+
+    return user;
+  });
 
   createOne = tryCatchWrapper(async (user: Partial<User>) => {
     return await this.userModel.create(user);
@@ -80,7 +92,7 @@ export class UserService {
   });
 
   getConversations = tryCatchWrapper(async (userId: Types.ObjectId) => {
-    return this.conversationService.getAll([
+    return (await this.conversationService.getAll([
       { $match: { members: userId, lastMessage: { $exists: true } } },
       {
         $lookup: {
@@ -126,6 +138,7 @@ export class UserService {
             createdAt: 1,
             sender: 1,
             status: 1,
+            seenBy: 1,
           },
           name: 1,
           avatar: 1,
@@ -141,6 +154,8 @@ export class UserService {
           },
         },
       },
-    ]);
+    ])) as ({
+      user: User;
+    } & Conversation)[];
   });
 }

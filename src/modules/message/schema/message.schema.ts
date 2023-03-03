@@ -21,7 +21,7 @@ export class Message extends Document {
     enum: MessageStatusEnum,
     default: 'sent',
   })
-  status: string;
+  status: MessageStatusEnum;
 
   @Prop()
   seenAt?: Date;
