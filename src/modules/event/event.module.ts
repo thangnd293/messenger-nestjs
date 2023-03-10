@@ -1,3 +1,4 @@
+import { MessageModule } from 'modules/message/message.module';
 import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { EventsGateway } from './events.gateway';
@@ -15,6 +16,7 @@ const { secret, expiresIn } = jwtConfig;
       signOptions: { expiresIn },
     }),
     UserModule,
+    MessageModule,
   ],
   providers: [EventsGateway, JwtStrategy],
 })

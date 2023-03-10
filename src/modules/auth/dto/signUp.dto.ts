@@ -6,6 +6,7 @@ export class SignUpDto {
   lastName: string;
   firstName: string;
   birthDate: Date;
+  avatar?: string;
 }
 
 export const SignUpDtoSchema = Joi.object({
@@ -14,4 +15,5 @@ export const SignUpDtoSchema = Joi.object({
   lastName: Joi.string().required(),
   firstName: Joi.string().required(),
   birthDate: Joi.date().required(),
+  avatar: Joi.string(),
 });

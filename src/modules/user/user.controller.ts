@@ -1,4 +1,3 @@
-import { ConversationEnum } from 'types/common';
 import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'guards/jwt-auth.guard';
 import { UserService } from './user.service';
@@ -45,30 +44,22 @@ export class UserController {
   async getConversations(@Request() req) {
     const requestUser = req.user;
     const data = await this.userService.getConversations(requestUser._id);
+    return {
+      data: data,
+      totalCount: data.length,
+    };
+  }
 
-    const conversations = data.map((item) => {
-      const { type } = item;
-
-      const avatar =
-        type === ConversationEnum.group ? item.avatar : item.user.avatar;
-      const name =
-        type === ConversationEnum.group
-          ? item.name
-          : `${item.user.lastName} ${item.user.firstName}`;
-      const isOnline =
-        type === ConversationEnum.group ? false : item.user.isOnline;
-
-      return {
-        ...item,
-        avatar,
-        name,
-        isOnline,
-      };
-    });
+  @UseGuards(JwtAuthGuard)
+  @Get('online')
+  async getOnlineUsers(@Request() req) {
+    const requestUser = req.user;
+    const connections = await this.userService.getConnections(requestUser._id);
+    const onlineUsers = connections.filter((item) => item.user.isOnline);
 
     return {
-      data: conversations,
-      totalCount: conversations.length,
+      data: onlineUsers,
+      totalCount: onlineUsers.length,
     };
   }
 }

@@ -1,4 +1,3 @@
-import { Conversation } from './../conversation/conversation.schema';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConversationService } from 'modules/conversation/conversation.service';
@@ -92,70 +91,20 @@ export class UserService {
   });
 
   getConversations = tryCatchWrapper(async (userId: Types.ObjectId) => {
-    return (await this.conversationService.getAll([
-      { $match: { members: userId, lastMessage: { $exists: true } } },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'members',
-          foreignField: '_id',
-          as: 'members',
-        },
-      },
-      {
-        $addFields: {
-          user: {
-            $first: {
-              $filter: {
-                input: '$members',
-                as: 'member',
-                cond: { $ne: ['$$member._id', userId] },
-              },
-            },
-          },
-        },
-      },
-      {
-        $lookup: {
-          from: 'messages',
-          localField: 'lastMessage',
-          foreignField: '_id',
-          as: 'lastMessage',
-        },
-      },
-      {
-        $addFields: {
-          lastMessage: { $arrayElemAt: ['$lastMessage', 0] },
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          type: 1,
-          lastMessage: {
-            _id: 1,
-            content: 1,
-            createdAt: 1,
-            sender: 1,
-            status: 1,
-            seenBy: 1,
-          },
-          name: 1,
-          avatar: 1,
-          isOnline: 1,
-          lastActive: 1,
-          user: {
-            _id: 1,
-            lastName: 1,
-            firstName: 1,
-            avatar: 1,
-            isOnline: 1,
-            lastActive: 1,
-          },
-        },
-      },
-    ])) as ({
-      user: User;
-    } & Conversation)[];
+    return await this.conversationService.getAll(userId, {
+      lastMessage: { $exists: true },
+    });
+  });
+
+  updateOnline = tryCatchWrapper(async (userId: string, isOnline: boolean) => {
+    return await this.userModel.findByIdAndUpdate(new Types.ObjectId(userId), {
+      isOnline,
+    });
+  });
+
+  updateLastActive = tryCatchWrapper(async (userId: string) => {
+    return await this.userModel.findByIdAndUpdate(new Types.ObjectId(userId), {
+      lastActive: new Date(),
+    });
   });
 }

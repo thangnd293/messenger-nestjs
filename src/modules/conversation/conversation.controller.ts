@@ -12,13 +12,14 @@ export class ConversationController {
   @Get(':id')
   async getConversation(@Request() req, @Param('id') id: string) {
     const requestUser = req.user;
-    const conversationFound =
-      await this.conversationService.getConversationById(
-        requestUser._id,
-        new Types.ObjectId(id),
-      );
+    const conversationFound = await this.conversationService.getAll(
+      requestUser._id,
+      {
+        _id: new Types.ObjectId(id),
+      },
+    );
     return {
-      data: conversationFound,
+      data: conversationFound?.[0] || null,
     };
   }
 }

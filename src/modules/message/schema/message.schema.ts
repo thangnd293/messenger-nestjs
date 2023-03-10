@@ -6,6 +6,12 @@ import { ActiveTime, ActiveTimeSchema } from './timeActive.schema';
 
 @Schema({ timestamps: true })
 export class Message extends Document {
+  @Prop()
+  idClient: string;
+
+  @Prop()
+  sendAt: string;
+
   @Prop({
     enum: MessageTypeEnum,
   })
@@ -33,6 +39,9 @@ export class Message extends Document {
 
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'conversation' })
   conversation: string;
+
+  @Prop()
+  createdAt: string;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

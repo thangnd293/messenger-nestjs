@@ -1,10 +1,10 @@
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Message } from 'modules/message/schema/message.schema';
 import { ConversationModule } from './../conversation/conversation.module';
 import { MessageController } from './message.controller';
-import { MessageSchema } from './schema/message.schema';
-import { Message } from 'modules/message/schema/message.schema';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Module } from '@nestjs/common';
 import { MessageService } from './message.service';
+import { MessageSchema } from './schema/message.schema';
 
 @Module({
   imports: [

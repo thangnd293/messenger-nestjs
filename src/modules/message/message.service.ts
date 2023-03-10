@@ -1,8 +1,8 @@
-import { MessageStatus, MessageTypeEnum } from 'types/common';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConversationService } from 'modules/conversation/conversation.service';
-import { Model, Types, UpdateQuery } from 'mongoose';
+import { Model, Types } from 'mongoose';
+import { MessageStatusEnum, MessageTypeEnum } from 'types/common';
 import { tryCatchWrapper } from 'utils';
 import { Message } from './schema/message.schema';
 
@@ -16,7 +16,10 @@ export class MessageService {
   create = tryCatchWrapper(
     async (
       userId: Types.ObjectId,
-      message: Pick<Message, 'type' | 'content' | 'conversation'>,
+      message: Pick<
+        Message,
+        'type' | 'content' | 'conversation' | 'idClient' | 'sendAt'
+      >,
     ) => {
       const conversation = await this.conversationService.findById(
         new Types.ObjectId(message.conversation),
@@ -39,51 +42,94 @@ export class MessageService {
         },
       );
 
-      return messageSent;
+      return {
+        message: messageSent.toObject(),
+        conversation,
+      };
     },
   );
 
-  findAndUpdate = tryCatchWrapper(
-    async (id: string, update: UpdateQuery<Message>) => {
-      return this.messageModel.findByIdAndUpdate(id, update).lean();
-    },
-  );
-
-  updateStatus = tryCatchWrapper(
-    async (messageId: Types.ObjectId, status: MessageStatus) => {
-      return await this.messageModel.findByIdAndUpdate(messageId, {
-        $set: {
-          status,
-        },
-      });
-    },
-  );
-
-  seen = tryCatchWrapper(
-    async (userId: Types.ObjectId, messageId: Types.ObjectId) => {
-      const messageUpdated = await this.messageModel.findOneAndUpdate(
+  receivedMessages = tryCatchWrapper(
+    async (userId: string, conversation: string, createdAt: Date) => {
+      const result = await this.messageModel.updateMany(
         {
-          _id: messageId,
-          'seenBy.user': userId,
+          conversation,
+          status: MessageStatusEnum.sent,
+          sender: userId,
+          createdAt: { $lte: new Date(createdAt) },
         },
         {
           $set: {
-            'seenBy.$.activeTime': new Date(),
+            status: MessageStatusEnum.received,
           },
-        },
-        {
-          new: true,
         },
       );
 
-      if (!messageUpdated) {
-        return await this.messageModel.updateOne(
-          { _id: messageId },
-          { $push: { seenBy: { user: userId, activeTime: new Date() } } },
-        );
-      }
+      return result;
+    },
+  );
 
-      return messageUpdated;
+  readMessages = tryCatchWrapper(
+    async (userId: string, conversation: string, createdAt: Date) => {
+      const timestamp = new Date();
+
+      await this.messageModel.updateMany(
+        {
+          conversation,
+          sender: {
+            $ne: userId,
+          },
+          createdAt: { $lte: new Date(createdAt) },
+          'seenBy.user': { $ne: userId },
+        },
+        {
+          $push: {
+            seenBy: {
+              user: userId,
+              activeTime: timestamp,
+            },
+          },
+          $set: {
+            status: MessageStatusEnum.seen,
+          },
+        },
+      );
+
+      return timestamp.toISOString();
+    },
+  );
+
+  updateMessageSentToReceived = tryCatchWrapper(async (userId: string) => {
+    const conversationOfUser = await this.conversationService
+      .getConversationOfUser(new Types.ObjectId(userId))
+      .then((data) => data.map((item) => item._id.toString()));
+
+    const result = await this.messageModel.updateMany(
+      {
+        conversation: { $in: conversationOfUser },
+        status: MessageStatusEnum.sent,
+        sender: { $ne: userId },
+        createdAt: { $lte: new Date() },
+      },
+      {
+        $set: {
+          status: MessageStatusEnum.received,
+        },
+      },
+    );
+
+    return result;
+  });
+
+  getMessagesOfConversation = tryCatchWrapper(
+    async (conversationId: Types.ObjectId) => {
+      return await this.messageModel
+        .find({
+          conversation: conversationId,
+        })
+        .populate('sender', '_id name avatar')
+        .populate('seenBy.user', '_id name avatar')
+        .lean();
     },
   );
 

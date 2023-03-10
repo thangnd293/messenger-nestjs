@@ -1,3 +1,4 @@
+import { EventsModule } from './event/event.module';
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from 'modules/auth/auth.module';
@@ -13,6 +14,7 @@ import { UserModule } from './user/user.module';
     UserModule,
     MessageModule,
     ConversationModule,
+    EventsModule,
   ],
   controllers: [],
   providers: [],
