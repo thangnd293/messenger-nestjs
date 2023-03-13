@@ -71,6 +71,20 @@ export class ConversationService {
             },
           },
           {
+            $unwind: '$lastMessage',
+          },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'lastMessage.sender',
+              foreignField: '_id',
+              as: 'lastMessage.sender',
+            },
+          },
+          {
+            $unwind: '$lastMessage.sender',
+          },
+          {
             $project: {
               _id: 1,
               type: 1,
@@ -78,9 +92,13 @@ export class ConversationService {
                 _id: 1,
                 content: 1,
                 createdAt: 1,
-                sender: 1,
                 status: 1,
                 seenBy: 1,
+                sender: {
+                  _id: '$lastMessage.sender._id',
+                  name: '$lastMessage.sender.name',
+                  avatar: '$lastMessage.sender.avatar',
+                },
               },
               name: 1,
               avatar: 1,
