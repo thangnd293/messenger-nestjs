@@ -1,5 +1,5 @@
 import { Controller, UseGuards } from '@nestjs/common';
-import { Get, Param, Request } from '@nestjs/common/decorators';
+import { Get, Param } from '@nestjs/common/decorators';
 import { JwtAuthGuard } from 'guards/jwt-auth.guard';
 import { Types } from 'mongoose';
 import { ConversationService } from './conversation.service';
@@ -10,16 +10,13 @@ export class ConversationController {
 
   @UseGuards(JwtAuthGuard)
   @Get(':id')
-  async getConversation(@Request() req, @Param('id') id: string) {
-    const requestUser = req.user;
-    const conversationFound = await this.conversationService.getAll(
-      requestUser._id,
-      {
-        _id: new Types.ObjectId(id),
-      },
+  async getConversation(@Param('id') id: string) {
+    const conversationFound = await this.conversationService.findById(
+      new Types.ObjectId(id),
     );
+
     return {
-      data: conversationFound?.[0] || null,
+      data: conversationFound,
     };
   }
 }

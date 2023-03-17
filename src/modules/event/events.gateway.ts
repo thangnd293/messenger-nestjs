@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { UseGuards } from '@nestjs/common';
 import {
   ConnectedSocket,
@@ -10,14 +9,16 @@ import {
 } from '@nestjs/websockets';
 import { OnGatewayDisconnect } from '@nestjs/websockets/interfaces';
 import { jwtConfig } from 'configs';
+import { SOCKET_EVENT } from 'constants/socket';
 import { WsGuard } from 'guards/ws-auth.guard';
 import * as jwt from 'jsonwebtoken';
 import { UserService } from 'modules/user/user.service';
+import { Types } from 'mongoose';
 import { Server, Socket } from 'socket.io';
 import { Store } from 'store';
+import { MessageStatusEnum } from 'types/common';
 import { Payload } from 'types/jwt';
 import { MessageService } from './../message/message.service';
-import { SOCKET_EVENT } from 'constants/socket';
 
 const { secret } = jwtConfig;
 const store = Store.getStore();
@@ -83,19 +84,30 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       user._id,
       data,
     );
+
     const messageSentBack = {
       ...message,
       sender: user,
     };
 
+    const conversationSendBack = {
+      ...conversation,
+      lastMessage: messageSentBack,
+    };
+
     const otherMembers = conversation.members
       .filter((member) => member._id.toString() !== user._id.toString())
-      .map((member) => member.toString());
+      .map((member) => member._id.toString());
 
     this.server
       .to(user._id.toString())
       .except(client.id)
       .emit(SOCKET_EVENT.MESSAGE_SENT, messageSentBack);
+
+    this.server
+      .to(conversation.members.map((member) => member._id.toString()))
+      .except(client.id)
+      .emit(SOCKET_EVENT.NEW_CONVERSATION, conversationSendBack);
 
     this.server
       .to(otherMembers)
@@ -112,9 +124,15 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       conversation,
       sender: { _id: userId },
       createdAt,
+      idClient,
     } = data;
 
     await this.messageService.receivedMessages(userId, conversation, createdAt);
+
+    this.server.to(userId).emit(SOCKET_EVENT.UPDATE_CONVERSATION, {
+      idClient,
+      status: MessageStatusEnum.received,
+    });
 
     this.server
       .to(userId)
@@ -136,6 +154,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const otherMembers = members.filter(
       (member) => member !== user._id.toString(),
     );
+
+    this.server.to(otherMembers).emit(SOCKET_EVENT.UPDATE_CONVERSATION, {
+      idClient: message.idClient,
+      status: MessageStatusEnum.seen,
+    });
 
     this.server.to(otherMembers).emit(SOCKET_EVENT.SEEN_MESSAGE, {
       user,

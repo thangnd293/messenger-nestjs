@@ -41,7 +41,6 @@ export class MessageService {
           },
         },
       );
-
       return {
         message: messageSent.toObject(),
         conversation,
@@ -72,6 +71,7 @@ export class MessageService {
   readMessages = tryCatchWrapper(
     async (userId: string, conversation: string, createdAt: Date) => {
       const timestamp = new Date();
+      console.log('vao');
 
       await this.messageModel.updateMany(
         {

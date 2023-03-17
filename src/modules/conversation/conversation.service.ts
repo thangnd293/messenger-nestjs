@@ -19,7 +19,13 @@ export class ConversationService {
   ) {}
 
   findById = tryCatchWrapper(async (id: Types.ObjectId) => {
-    return await this.conversationModel.findById(id).lean();
+    return await this.conversationModel
+      .findById(id)
+      .populate({
+        path: 'members',
+        select: 'name avatar isOnline lastActive firstName lastName',
+      })
+      .lean();
   });
 
   updateOne = tryCatchWrapper(
