@@ -71,8 +71,6 @@ export class MessageService {
   readMessages = tryCatchWrapper(
     async (userId: string, conversation: string, createdAt: Date) => {
       const timestamp = new Date();
-      console.log('vao');
-
       await this.messageModel.updateMany(
         {
           conversation,
@@ -100,9 +98,20 @@ export class MessageService {
   );
 
   updateMessageSentToReceived = tryCatchWrapper(async (userId: string) => {
-    const conversationOfUser = await this.conversationService
-      .getConversationOfUser(new Types.ObjectId(userId))
-      .then((data) => data.map((item) => item._id.toString()));
+    const conversations = await this.conversationService.getConversationOfUser(
+      new Types.ObjectId(userId),
+    );
+
+    const conversationOfUser = conversations.map((conversation) =>
+      conversation._id.toString(),
+    );
+
+    const lastMessageIdClients = conversations
+      .filter(
+        (conversation) =>
+          conversation.lastMessage?.status === MessageStatusEnum.sent,
+      )
+      .map((conversation) => conversation.lastMessage.idClient);
 
     const result = await this.messageModel.updateMany(
       {
@@ -118,7 +127,9 @@ export class MessageService {
       },
     );
 
-    return result;
+    return {
+      lastMessageIdClients,
+    };
   });
 
   getMessagesOfConversation = tryCatchWrapper(

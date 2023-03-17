@@ -262,7 +262,8 @@ export class ConversationService {
       .find({
         members: { $in: [userId] },
       })
-      .select('_id')
+      .populate('lastMessage', 'idClient status')
+      .select('_id lastMessage')
       .lean();
   });
 }

@@ -41,7 +41,8 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!token) return;
 
     const id = getUserIdFromToken(token);
-    this.messageService.updateMessageSentToReceived(id);
+    const { lastMessageIdClients } =
+      await this.messageService.updateMessageSentToReceived(id);
 
     const friends = (
       await this.userService.getConnections(new Types.ObjectId(id))
@@ -49,6 +50,10 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const timestamp = new Date().toString();
 
     this.server.to(friends).emit(SOCKET_EVENT.MESSAGE_RECEIVED, id, timestamp);
+    this.server.to(friends).emit(SOCKET_EVENT.UPDATE_CONVERSATION, {
+      idClient: lastMessageIdClients,
+      status: MessageStatusEnum.received,
+    });
 
     store.set(id, socket.id);
     socket.join(id);
@@ -144,23 +149,28 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage(SOCKET_EVENT.READ_MESSAGE)
   async handleReadMessage(@MessageBody() data) {
     const [user, message, members] = data;
-
     const seenAt = await this.messageService.readMessages(
       user._id,
       message.conversation,
       message.createdAt,
     );
 
-    const otherMembers = members.filter(
-      (member) => member !== user._id.toString(),
-    );
+    // const otherMembers = members.filter(
+    //   (member) => member !== user._id.toString(),
+    // );
 
-    this.server.to(otherMembers).emit(SOCKET_EVENT.UPDATE_CONVERSATION, {
-      idClient: message.idClient,
-      status: MessageStatusEnum.seen,
+    const newSeenBy = message.seenBy?.concat({
+      user,
+      activeTime: seenAt,
     });
 
-    this.server.to(otherMembers).emit(SOCKET_EVENT.SEEN_MESSAGE, {
+    this.server.to(members).emit(SOCKET_EVENT.UPDATE_CONVERSATION, {
+      idClient: message.idClient,
+      status: MessageStatusEnum.seen,
+      seenBy: newSeenBy,
+    });
+
+    this.server.to(members).emit(SOCKET_EVENT.SEEN_MESSAGE, {
       user,
       seenAt,
     });
