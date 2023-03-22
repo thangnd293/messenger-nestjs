@@ -7,4 +7,5 @@ export const SOCKET_EVENT = {
   SEEN_MESSAGE: 'seen-message',
   NEW_CONVERSATION: 'new-conversation',
   UPDATE_CONVERSATION: 'update-conversation',
+  UPDATE_STATUS_ONLINE: 'update-status-online',
 };

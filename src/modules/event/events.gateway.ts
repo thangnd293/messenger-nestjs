@@ -54,13 +54,14 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       idClient: lastMessageIdClients,
       status: MessageStatusEnum.received,
     });
+    this.server.to(friends).emit(SOCKET_EVENT.UPDATE_STATUS_ONLINE);
 
     store.set(id, socket.id);
     socket.join(id);
     this.userService.updateOnline(id, true);
   }
 
-  handleDisconnect(@ConnectedSocket() socket: Socket) {
+  async handleDisconnect(@ConnectedSocket() socket: Socket) {
     const { token } = socket.handshake.auth;
     if (!token) return;
 
@@ -73,6 +74,13 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (!notExist) {
       this.userService.updateOnline(id, false);
       this.userService.updateLastActive(id);
+      console.log('disconnect');
+
+      const friends = (
+        await this.userService.getConnections(new Types.ObjectId(id))
+      ).map((connect) => connect.user._id.toString());
+
+      this.server.to(friends).emit(SOCKET_EVENT.UPDATE_STATUS_ONLINE);
     }
   }
 
@@ -106,19 +114,15 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.server
       .to(user._id.toString())
-      .except(client.id)
       .emit(SOCKET_EVENT.MESSAGE_SENT, messageSentBack);
 
     this.server
       .to(conversation.members.map((member) => member._id.toString()))
-      .except(client.id)
       .emit(SOCKET_EVENT.NEW_CONVERSATION, conversationSendBack);
 
     this.server
       .to(otherMembers)
       .emit(SOCKET_EVENT.NEW_MESSAGE, messageSentBack);
-
-    return data.idClient;
   }
 
   // ======= MESSAGE RECEIVED =======
@@ -154,10 +158,6 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
       message.conversation,
       message.createdAt,
     );
-
-    // const otherMembers = members.filter(
-    //   (member) => member !== user._id.toString(),
-    // );
 
     const newSeenBy = message.seenBy?.concat({
       user,

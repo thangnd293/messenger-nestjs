@@ -91,7 +91,8 @@ export class UserService {
   });
 
   getConversations = tryCatchWrapper(async (userId: Types.ObjectId) => {
-    return await this.conversationService.getAll(userId, {
+    return await this.conversationService.getAll({
+      members: userId,
       lastMessage: { $exists: true },
     });
   });
